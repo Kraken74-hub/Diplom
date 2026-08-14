@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Сервис базы данных PostgreSQL
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wb_tracker
+    ports:
+      - "5432:5432"
+
+  # Сервис Redis для брокера задач Celery
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # Сервис Telegram-бота
+  bot:
+    build: .
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+
+  # Воркер Celery: выполняет трудоемкие задачи (проверка цен на WB)
+  celery_worker:
+    build: .
+    command: celery -A src.tasks.celery_app worker --loglevel=info
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+
+  # Планировщик Celery Beat: каждые N минут/часов генерирует задачи для воркера
+  celery_beat:
+    build: .
+    command: celery -A src.tasks.celery_app beat --loglevel=info
+    env_file: .env
+    depends_on:
+      - redis
