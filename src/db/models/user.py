@@ -13,4 +13,4 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Связь "один-ко-многим" с подписками (при удалении юзера удаляются и подписки)
-    subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
+    subscriptions = relationship("Subscription", back_populates="user")

@@ -1,4 +1,4 @@
-aiogram==3.4.1
+aiogram==3.10.0
 SQLAlchemy==2.0.28
 asyncpg==0.29.0
 celery==5.3.6

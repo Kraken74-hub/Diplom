@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Команда по умолчанию при запуске основного контейнера — запуск Telegram-бота
-CMD ["python", "main.py"]
+CMD ["python", "-m", "src.bot.main"]

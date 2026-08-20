@@ -10,12 +10,14 @@ from src.db.models import Subscription, PriceHistory
 from src.parser.client import get_product_info
 from config.settings import settings
 
+
 async def send_notification(bot: Bot, tg_id: int, text: str):
     """Вспомогательная функция для безопасной отправки сообщений в Telegram"""
     try:
         await bot.send_message(chat_id=tg_id, text=text, parse_mode="Markdown")
     except Exception as e:
         print(f"Ошибка отправки уведомления для {tg_id}: {e}")
+
 
 async def async_check_prices():
     """
@@ -38,10 +40,15 @@ async def async_check_prices():
             subs = res.scalars().all()
 
             for sub in subs:
+                # Защита на случай, если у подписки еще не проставлен last_checked
+                if not sub.last_checked:
+                    sub.last_checked = now
+                    continue
+
                 # Проверяем, настал ли интервал проверки для этой подписки
                 if now >= sub.last_checked + timedelta(hours=sub.check_interval):
                     prod_info = await get_product_info(sub.product.nm_id)
-                    if prod_info:
+                    if prod_info and prod_info.get("price") is not None:
                         new_price = prod_info["price"]
                         old_price = sub.product.current_price
 
@@ -64,7 +71,17 @@ async def async_check_prices():
     finally:
         await bot.session.close()
 
+
 @celery.task(name='src.tasks.workers.check_prices')
 def check_prices():
-    """Синхронный оберточный метод Celery, запускающий асинхронный event loop"""
-    asyncio.run(async_check_prices())
+    """
+    Безопасный синхронный оберточный метод Celery.
+    Создает изолированный event loop для каждого запуска задачи,
+    предотвращая конфликты потоков и RuntimeError.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(async_check_prices())
+    finally:
+        loop.close()

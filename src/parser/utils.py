@@ -1,12 +1,22 @@
 import re
 
+
 def extract_nm_id(text: str) -> int | None:
     """
-    Извлекает артикул (nm_id) из текста.
-    Работает как с простым текстом "12345678", так и с ссылками вида:
-    https://www.wildberries.ru/catalog/12345678/detail.aspx
+    Извлекает артикул (nm_id) из текста или ссылки Wildberries.
+    Приоритетно ищет ID товара в пути /catalog/, игнорируя размеры и параметры.
     """
-    match = re.search(r'(?:catalog/)?(\d{6,12})', text)
-    if match:
-        return int(match.group(1))
+    if not text:
+        return None
+
+    # 1. Ищем артикул строго после /catalog/
+    catalog_match = re.search(r"catalog/(\d+)", text)
+    if catalog_match:
+        return int(catalog_match.group(1))
+
+    # 2. Если передана просто строка из цифр без ссылки
+    clean_text = text.strip()
+    if clean_text.isdigit():
+        return int(clean_text)
+
     return None
