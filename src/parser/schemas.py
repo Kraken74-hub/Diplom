@@ -17,7 +17,7 @@ class WBProduct(BaseModel):
     id: int
     name: str
     sizes: list[Size] = []
-    salePriceU: int | None = None  # Фолбэк для совместимости
+    salePriceU: int | None = None
 
 class WBData(BaseModel):
     """Схема контейнера data"""

@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def init_db():
-    """Автоматическое создание таблиц базы данных при первом старте"""
+    """Автоматическое создание таблиц базы данных при старте"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

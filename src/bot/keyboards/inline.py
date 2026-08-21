@@ -2,7 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def main_menu_keyboard() -> ReplyKeyboardMarkup:
-    """Главная Reply-клавиатура с кнопками"""
+    """Главная клавиатура с кнопками"""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="➕ Добавить трекер")],
@@ -12,7 +12,7 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
     )
 
 def interval_keyboard() -> InlineKeyboardMarkup:
-    """Inline-клавиатура для выбора интервала отслеживания"""
+    """клавиатура для выбора интервала отслеживания"""
     builder = InlineKeyboardBuilder()
     builder.button(text="3 часа", callback_data="interval_3")
     builder.button(text="6 часов", callback_data="interval_6")
@@ -21,7 +21,7 @@ def interval_keyboard() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def delete_tracker_keyboard(sub_id: int) -> InlineKeyboardMarkup:
-    """Inline-кнопка удаления конкретного трекера"""
+    """кнопка удаления конкретного трекера"""
     builder = InlineKeyboardBuilder()
     builder.button(text="❌ Удалить", callback_data=f"del_sub_{sub_id}")
     return builder.as_markup()

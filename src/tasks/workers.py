@@ -20,13 +20,6 @@ async def send_notification(bot: Bot, tg_id: int, text: str):
 
 
 async def async_check_prices():
-    """
-    Основная бизнес-логика фоновой проверки:
-    1. Извлекаются все подписки.
-    2. Фильтруются те, у которых настал срок проверки (исходя из last_checked и check_interval).
-    3. Парсится актуальная цена с WB.
-    4. Если цена изменилась — отправляется уведомление юзеру и записывается история.
-    """
     bot = Bot(token=settings.BOT_TOKEN)
     try:
         async with async_session() as session:
@@ -74,11 +67,7 @@ async def async_check_prices():
 
 @celery.task(name='src.tasks.workers.check_prices')
 def check_prices():
-    """
-    Безопасный синхронный оберточный метод Celery.
-    Создает изолированный event loop для каждого запуска задачи,
-    предотвращая конфликты потоков и RuntimeError.
-    """
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:

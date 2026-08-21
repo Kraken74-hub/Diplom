@@ -9,12 +9,12 @@ def extract_nm_id(text: str) -> int | None:
     if not text:
         return None
 
-    # 1. Ищем артикул строго после /catalog/
+    # Ищем артикул строго после /catalog/
     catalog_match = re.search(r"catalog/(\d+)", text)
     if catalog_match:
         return int(catalog_match.group(1))
 
-    # 2. Если передана просто строка из цифр без ссылки
+    # Если передана просто строка из цифр без ссылки
     clean_text = text.strip()
     if clean_text.isdigit():
         return int(clean_text)

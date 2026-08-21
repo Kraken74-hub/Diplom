@@ -1,5 +1,4 @@
 import httpx
-import asyncio
 import logging
 
 # Настраиваем логирование, чтобы видеть ответы WB в терминале

@@ -15,7 +15,7 @@ router = Router()
 
 
 class AddTrackStates(StatesGroup):
-    """Машина состояний (FSM) для пошагового добавления трекера"""
+    """Машина FSM состояний для пошагового добавления трекера"""
     waiting_for_input = State()  # Ожидание ссылки или артикула
     waiting_for_interval = State()  # Ожидание нажатия кнопки с интервалом
 
@@ -30,7 +30,7 @@ async def start_tracking(message: Message, state: FSMContext):
 @router.message(AddTrackStates.waiting_for_input)
 async def process_input(message: Message, state: FSMContext):
     """Валидация введенной ссылки и получение информации о товаре через парсер"""
-    # Извлекаем чистый nm_id из текста (игнорируя параметры ?size=)
+    # Извлекаем чистый nm_id из текста
     nm_id = extract_nm_id(message.text)
     if not nm_id:
         await message.answer(
@@ -82,7 +82,7 @@ async def process_interval(call: CallbackQuery, state: FSMContext, session: Asyn
         await state.clear()
         return
 
-    # 1. Находим или создаем пользователя
+    # Находим или создаем пользователя
     res_user = await session.execute(select(User).where(User.tg_id == call.from_user.id))
     user = res_user.scalar_one_or_none()
     if not user:
@@ -90,7 +90,7 @@ async def process_interval(call: CallbackQuery, state: FSMContext, session: Asyn
         session.add(user)
         await session.flush()
 
-    # 2. Ищем или создаем товар в БД
+    # Ищем или создаем товар в БД
     res_prod = await session.execute(select(Product).where(Product.nm_id == prod_data["nm_id"]))
     product = res_prod.scalar_one_or_none()
 
@@ -110,7 +110,7 @@ async def process_interval(call: CallbackQuery, state: FSMContext, session: Asyn
     else:
         product.current_price = prod_data.get("price")
 
-    # 3. Проверяем наличие подписки (защита от дубликатов)
+    # Проверяем наличие подписки
     res_sub = await session.execute(
         select(Subscription).where(
             Subscription.user_id == user.id,
