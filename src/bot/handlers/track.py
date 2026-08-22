@@ -2,7 +2,6 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import StateFilter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -16,7 +15,7 @@ router = Router()
 
 class AddTrackStates(StatesGroup):
     """Машина FSM состояний для пошагового добавления трекера"""
-    waiting_for_input = State()  # Ожидание ссылки или артикула
+    waiting_for_input = State()     # Ожидание ссылки или артикула
     waiting_for_interval = State()  # Ожидание нажатия кнопки с интервалом
 
 
@@ -30,7 +29,6 @@ async def start_tracking(message: Message, state: FSMContext):
 @router.message(AddTrackStates.waiting_for_input)
 async def process_input(message: Message, state: FSMContext):
     """Валидация введенной ссылки и получение информации о товаре через парсер"""
-    # Извлекаем чистый nm_id из текста
     nm_id = extract_nm_id(message.text)
     if not nm_id:
         await message.answer(
@@ -45,10 +43,13 @@ async def process_input(message: Message, state: FSMContext):
         )
         return
 
-    # Сохраняем данные товара во временное состояние FSM
     await state.update_data(prod_data=prod_data)
 
-    price_fmt = f"<b>{prod_data['price']} руб.</b>" if prod_data.get("price") is not None else "<i>Нет в наличии</i>"
+    price_fmt = (
+        f"<b>{prod_data['price']} руб.</b>"
+        if prod_data.get("price") is not None
+        else "<i>Нет в наличии</i>"
+    )
 
     await message.answer(
         f"📦 <b>Товар найден:</b>\n\n"
@@ -62,7 +63,7 @@ async def process_input(message: Message, state: FSMContext):
     await state.set_state(AddTrackStates.waiting_for_interval)
 
 
-@router.callback_query(StateFilter(AddTrackStates.waiting_for_interval),F.data.startswith("interval_"))
+@router.callback_query(F.data.startswith("interval_"))
 async def process_interval(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     """Сохранение выбранного интервала и записи трекера в БД"""
     await call.answer()
@@ -77,10 +78,15 @@ async def process_interval(call: CallbackQuery, state: FSMContext, session: Asyn
     data = await state.get_data()
     prod_data = data.get("prod_data")
 
+    # Сбрасываем состояние FSM, так как пользователь уже выбрал действие
+    await state.clear()
+
     if not prod_data:
-        await call.message.edit_text("❌ Данные сессии истекли. Начните добавление заново.")
-        await state.clear()
+        await call.message.edit_text("❌ Данные сессии истекли. Отправьте артикул заново.")
         return
+
+    # Убираем клавиатуру с выбором интервала
+    await call.message.edit_reply_markup(reply_markup=None)
 
     # Находим или создаем пользователя
     res_user = await session.execute(select(User).where(User.tg_id == call.from_user.id))
@@ -104,13 +110,12 @@ async def process_interval(call: CallbackQuery, state: FSMContext, session: Asyn
         session.add(product)
         await session.flush()
 
-        # Фиксируем начальную цену в истории, если цена определена
         if prod_data.get("price") is not None:
             session.add(PriceHistory(product_id=product.id, price=prod_data["price"]))
     else:
         product.current_price = prod_data.get("price")
 
-    # Проверяем наличие подписки
+    # Проверяем и обновляем или создаем подписку
     res_sub = await session.execute(
         select(Subscription).where(
             Subscription.user_id == user.id,
@@ -128,6 +133,4 @@ async def process_interval(call: CallbackQuery, state: FSMContext, session: Asyn
         msg_text = f"✅ Трекер успешно добавлен!\nИнтервал проверки: <b>{interval} ч.</b>"
 
     await session.commit()
-
     await call.message.edit_text(msg_text, parse_mode="HTML")
-    await state.clear()

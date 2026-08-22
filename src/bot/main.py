@@ -30,7 +30,7 @@ async def main():
     for router in routers:
         dp.include_router(router)
 
-    # Пропускаем накопившиеся сообщения и запускаем Long Polling
+    # Пропускаем накопившиеся сообщения
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

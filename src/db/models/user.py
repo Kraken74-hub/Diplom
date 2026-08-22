@@ -12,5 +12,5 @@ class User(Base):
     username: Mapped[str | None] = mapped_column(String, nullable=True)     # Имя пользователя @username
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    # Связь "один-ко-многим" с подписками (при удалении юзера удаляются и подписки)
-    subscriptions = relationship("Subscription", back_populates="user")
+    # Связь юзера с подписками (при удалении юзера удаляются и подписки)
+    subscriptions = relationship("src.db.models.subscription.Subscription", back_populates="user")
